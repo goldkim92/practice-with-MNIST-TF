@@ -7,6 +7,7 @@ from model import Network
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--phase',          type=str,   default='train',    help='train or test')
 parser.add_argument('--gpu_number',     type=str,   default='0')
+parser.add_argument('--continue_train', type=bool,   default=False)
 
 parser.add_argument('--data_dir',       type=str,   default=os.path.join('.','MNIST_data')) # automatically change (looking --data)
 parser.add_argument('--log_dir',        type=str,   default='log') # in assets/ directory
@@ -15,7 +16,7 @@ parser.add_argument('--sample_dir',     type=str,   default='sample') # in asset
 parser.add_argument('--test_dir',       type=str,   default='test') # in assets/ directory
 parser.add_argument('--assets_dir',     type=str,   default=None,   required=True) # if assets_dir='aa' -> assets_dir='./assets/aa'
 
-parser.add_argument('--batch_size',     type=int,   default=16)
+parser.add_argument('--batch_size',     type=int,   default=128)
 # parser.add_argument('--image_size',     type=int,   default=28)
 parser.add_argument('--input_size',     type=int,   default=32)
 parser.add_argument('--image_c',        type=int,   default=1)
@@ -25,10 +26,9 @@ parser.add_argument('--nf',             type=int,   default=64) # number of filt
 parser.add_argument('--epoch',          type=int,   default=20)
 parser.add_argument('--lr',             type=float, default=0.0001) # learning_rate
 parser.add_argument('--beta1',          type=float, default=0.9)
-#parser.add_argument('--continue_train', type=bool,  default=False)
 
 parser.add_argument('--sample_step',    type=int,   default=300) 
-parser.add_argument('--log_step',       type=int,   default=50) 
+parser.add_argument('--log_step',       type=int,   default=300) 
 parser.add_argument('--ckpt_step',      type=int,   default=500) 
 
 args = parser.parse_args()

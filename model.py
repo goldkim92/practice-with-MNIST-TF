@@ -17,6 +17,7 @@ class Network(object):
     def __init__(self, sess, args):
         self.sess = sess
         self.phase = args.phase
+        self.continue_train = args.continue_train
         self.data_dir = args.data_dir
         self.log_dir = args.log_dir
         self.ckpt_dir = args.ckpt_dir
@@ -35,8 +36,8 @@ class Network(object):
         self.ckpt_step = args.ckpt_step
         
         # hyper parameter for building module
-        OPTIONS = namedtuple('options', ['batch_size', 'input_size', 'image_c', 'nf', 'label_n'])
-        self.options = OPTIONS(self.batch_size, self.input_size, self.image_c, self.nf, self.label_n)
+        OPTIONS = namedtuple('options', ['batch_size', 'nf', 'label_n', 'phase'])
+        self.options = OPTIONS(self.batch_size, self.nf, self.label_n, self.phase)
         
         # build model & make checkpoint saver
         self.build_model()
@@ -51,7 +52,8 @@ class Network(object):
         self.labels = tf.placeholder(tf.float32, [None,self.label_n], name='labels')
         
         # loss funciton
-        self.pred = module.classifier(self.input_images, self.options, reuse=False, name='densenet')
+        # self.pred = module.classifier(self.input_images, self.options, reuse=False, name='densenet')
+        self.pred = module.DenseNet(self.input_images, self.nf, self.label_n, self.phase).model
         self.loss = module.cls_loss(logits=self.pred, labels=self.labels)
         
         # accuracy
@@ -60,8 +62,8 @@ class Network(object):
 
         # trainable variables
         t_vars = tf.trainable_variables()
-#        self.module_vars = [var for var in t_vars if 'densenet' in var.name]
-#        for var in t_vars: print(var.name)
+#         self.module_vars = [var for var in t_vars if 'densenet' in var.name]
+#         for var in t_vars: print(var.name)
         
         # optimizer
         self.optim = tf.train.AdamOptimizer(self.lr).minimize(self.loss, var_list=t_vars)
@@ -88,6 +90,12 @@ class Network(object):
         # variable initialize
         self.sess.run(tf.global_variables_initializer())
             
+        # load or not checkpoint
+        if self.continue_train and self.checkpoint_load():
+            print(" [*] before training, Load SUCCESS ")
+        else:
+            print(" [!] before training, no need to Load ")    
+        
         count_idx = 0
         # train
         for epoch in range(self.epoch):
@@ -125,8 +133,16 @@ class Network(object):
 
 
     def test(self):
-        # load train data
-        self.load_data()
+        # load test data
+        mnist = input_data.read_data_sets(self.data_dir, one_hot=True)
+        self.test_images, self.test_labels = mnist.test.images, mnist.test.labels
+        self.test_images = self.test_images.reshape([-1, self.input_size-4, self.input_size-4, self.image_c])
+        self.test_images = self.zero_padding(self.test_images) # 28*28*1 -> 32*32*1
+        
+        ## test for batch_normalization & drop-out train/test phase!!!!
+        perm = np.random.permutation(self.test_images.shape[0])
+        self.test_images = np.take(self.test_images, perm, axis=0)
+        self.test_labels = np.take(self.test_labels, perm, axis=0)
         
         self.sess.run(tf.global_variables_initializer())
         
@@ -178,6 +194,7 @@ class Network(object):
             accr += self.sess.run(self.accr_count, feed_dict=feeds)
         accr = accr / dataset.n_
         
+        print('{} accuracy: {:.04f}'.format(phase, accr))
         return accr 
 
 

@@ -1,3 +1,5 @@
 MNIST_data/
 __pycache__/
 assets/
+.ipynb_checkpoints/
+*.ipynb
